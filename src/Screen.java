@@ -40,16 +40,22 @@ public class Screen {
         noteTextField.setMaximumSize(componentSize); // Ensure maximum size for consistent layout
         mainPanel.add(noteTextField);
 
-        // Create a button to submit the note
-        JButton submitButton = new JButton("Submit");
-        submitButton.setFont(new Font("Arial", Font.PLAIN, 18)); // Adjust font size as needed
-        submitButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-        submitButton.setPreferredSize(componentSize); // Set preferred size
-        submitButton.setMaximumSize(componentSize); // Ensure maximum size for consistent layout
-        mainPanel.add(submitButton);
+        JButton sameNoteEachRootButton = new JButton("Same note each root");
+        sameNoteEachRootButton.setFont(new Font("Arial", Font.PLAIN, 18)); // Adjust font size as needed
+        sameNoteEachRootButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        sameNoteEachRootButton.setPreferredSize(componentSize); // Set preferred size
+        sameNoteEachRootButton.setMaximumSize(componentSize); // Ensure maximum size for consistent layout
+        mainPanel.add(sameNoteEachRootButton);
+
+        JButton relativeScalesWithTheRoot = new JButton("Relatives scales of the root");
+        relativeScalesWithTheRoot.setFont(new Font("Arial", Font.PLAIN, 18)); // Adjust font size as needed
+        relativeScalesWithTheRoot.setAlignmentX(Component.CENTER_ALIGNMENT);
+        relativeScalesWithTheRoot.setPreferredSize(componentSize); // Set preferred size
+        relativeScalesWithTheRoot.setMaximumSize(componentSize); // Ensure maximum size for consistent layout
+        mainPanel.add(relativeScalesWithTheRoot);
 
         // Create a label to display the entered note
-        JLabel displayLabel = new JLabel("Root: ", SwingConstants.CENTER);
+        JLabel displayLabel = new JLabel("Note: ", SwingConstants.CENTER);
         displayLabel.setFont(new Font("Arial", Font.PLAIN, 18)); // Adjust font size as needed
         displayLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         displayLabel.setPreferredSize(componentSize); // Set preferred size
@@ -57,7 +63,7 @@ public class Screen {
         mainPanel.add(displayLabel);
 
         // Add action listener to the button
-        submitButton.addActionListener(new ActionListener() {
+        sameNoteEachRootButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Get the text from the text field
@@ -65,7 +71,19 @@ public class Screen {
                 // Display the note in the label
                 displayLabel.setText("Note: " + note);
                 // Fill the grid with notes
-                fillGrid(note);
+                fillGridWithTheSameRootToEachScale(note);
+            }
+        });
+
+        relativeScalesWithTheRoot.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Get the text from the text field
+                String note = noteTextField.getText().toUpperCase(); // Convert to uppercase
+                // Display the note in the label
+                displayLabel.setText("Note: " + note);
+                // Fill the grid with relative scales notes
+                fillGridWithTheRelativeNotesOfEachScale(note);
             }
         });
 
@@ -76,7 +94,6 @@ public class Screen {
         String[] columnNames = {"Modes", "I", "II", "III", "IV", "V", "VI", "VII"};
         String[] rowNames = {"Ionian", "Dorian", "Phrygian", "Lydian", "Mixolydian", "Aeolian", "Locrian"};
 
-        // Fill the first column with row names shifted forward
         for (int i = 0; i < 7; i++) {
             data[i][0] = rowNames[i];
         }
@@ -113,8 +130,54 @@ public class Screen {
         frame.setVisible(true);
     }
 
+    private void fillGridWithTheRelativeNotesOfEachScale(String rootNote) {
+        // Define the intervals for Ionian (Major scale)
+        String[] ionianIntervals = {"T", "T", "sT", "T", "T", "T", "sT"};
+
+        // Array to hold all possible notes
+        String[] notes = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+
+        // Find the index of the root note in the notes array
+        int rootIndex = Arrays.asList(notes).indexOf(rootNote);
+        if (rootIndex == -1) {
+            // Root note not found, return without filling the grid
+            return;
+        }
+
+        // Generate the Ionian scale for the root note
+        String[] ionianScale = new String[7];
+        int currentIndex = rootIndex;
+        for (int i = 0; i < ionianIntervals.length; i++) {
+            ionianScale[i] = notes[currentIndex];
+            int intervalValue = ionianIntervals[i].equals("T") ? 2 : 1;
+            currentIndex = (currentIndex + intervalValue) % notes.length;
+        }
+
+        // Chord symbols array
+        String[][] chordSymbol = {
+                {"", "m", "m", "", "", "m", "°"}, // Ionian
+                {"m", "m", "", "", "m", "°", ""}, // Dorian
+                {"m", "", "", "m", "°", "", "m"}, // Phrygian
+                {"", "", "m", "°", "", "m", "°"}, // Lydian
+                {"", "m", "°", "", "m", "m", ""}, // Mixolydian
+                {"m", "°", "", "m", "m", "", ""}, // Aeolian
+                {"°", "", "m", "m", "", "", "m"}  // Locrian
+        };
+
+        // Fill the grid with the relative notes for each mode
+        for (int i = 0; i < 7; i++) {
+            for (int j = 0; j < 7; j++) {
+                int noteIndex = (j + i) % 7;
+                data[i][j + 1] = ionianScale[noteIndex] + chordSymbol[i][j];
+            }
+        }
+
+        // Update the table model to reflect the changes
+        updateTableModel();
+    }
+
     // Fill the grid with notes for the given root note
-    private void fillGrid(String rootNote) {
+    private void fillGridWithTheSameRootToEachScale(String rootNote) {
         // Define the intervals for each mode (steps from the root note)
         String[][] modesLogic = {
                 {"T", "T", "sT", "T", "T", "T", "sT"}, // Ionian (Major)
